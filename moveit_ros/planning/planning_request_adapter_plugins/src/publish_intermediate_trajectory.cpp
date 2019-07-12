@@ -39,36 +39,37 @@
 
 namespace default_planner_request_adapters
 {
-    class PublishIntermediateTrajectory : public planning_request_adapter::PlanningRequestAdapter
+class PublishIntermediateTrajectory : public planning_request_adapter::PlanningRequestAdapter
+{
+public:
+  ros::Publisher intermediate_trajectory_;
+
+  PublishIntermediateTrajectory() : planning_request_adapter::PlanningRequestAdapter()
+  {
+    ros::NodeHandle n;
+    intermediate_trajectory_ = n.advertise<moveit_msgs::RobotTrajectory>("intermediate_trajectory", 1000);
+  }
+
+  std::string getDescription() const override
+  {
+    return "Publish intermediate trajectory.";
+  }
+
+  bool adaptAndPlan(const PlannerFn& planner, const planning_scene::PlanningSceneConstPtr& planning_scene,
+                    const planning_interface::MotionPlanRequest& req, planning_interface::MotionPlanResponse& res,
+                    std::vector<std::size_t>& added_path_index) const override
+  {
+    bool result = planner(planning_scene, req, res);
+    if (result)
     {
-    public:
-        ros::Publisher intermediate_trajectory_;
-
-        PublishIntermediateTrajectory() : planning_request_adapter::PlanningRequestAdapter()
-        {
-            ros::NodeHandle n;
-            intermediate_trajectory_ = n.advertise<moveit_msgs::RobotTrajectory>("intermediate_trajectory", 1000);
-        }
-
-        std::string getDescription() const override
-        {
-            return "Publish intermediate trajectory.";
-        }
-
-        bool adaptAndPlan(const PlannerFn& planner, const planning_scene::PlanningSceneConstPtr& planning_scene,
-                          const planning_interface::MotionPlanRequest& req, planning_interface::MotionPlanResponse& res,
-                          std::vector<std::size_t>& added_path_index) const override
-        {
-            bool result = planner(planning_scene, req, res);
-            if(result)
-            {
-                moveit_msgs::MotionPlanResponse msg;
-                res.getMessage(msg);
-                intermediate_trajectory_.publish(msg.trajectory);
-            }
-            return result;
-        }
-    };
+      moveit_msgs::MotionPlanResponse msg;
+      res.getMessage(msg);
+      intermediate_trajectory_.publish(msg.trajectory);
+    }
+    return result;
+  }
+};
 }  // namespace default_planner_request_adapters
 
-CLASS_LOADER_REGISTER_CLASS(default_planner_request_adapters::PublishIntermediateTrajectory, planning_request_adapter::PlanningRequestAdapter);
+CLASS_LOADER_REGISTER_CLASS(default_planner_request_adapters::PublishIntermediateTrajectory,
+                            planning_request_adapter::PlanningRequestAdapter);
